@@ -1,0 +1,47 @@
+{
+  "projectType": "frontend",
+  "projectName": "Memorama - Forsaken Casino",
+  "projectDescription": "A browser-based 3D VR memory card game (Memorama) set in a horror-themed casino, built with A-Frame WebVR.",
+  "theme": "almond",
+  "primaryColor": "#cc0000",
+  "lightColor": "#ff4444",
+  "darkColor": "#440000",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": ["introduction", "quickstart"]
+          },
+          {
+            "group": "Gameplay",
+            "pages": ["gameplay/overview", "gameplay/controls", "gameplay/rules"]
+          },
+          {
+            "group": "Technical Reference",
+            "pages": ["reference/architecture", "reference/game-logic", "reference/assets"]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Immersive 3D VR environment powered by A-Frame WebVR",
+    "Horror-themed casino atmosphere with flickering red lights and fog",
+    "Classic Memorama (memory card) gameplay with 4 pairs of cards",
+    "40-second countdown timer adding urgency to gameplay",
+    "Card flip animations with match/mismatch logic",
+    "Background music and sound effects",
+    "Win/lose conditions with screen overlay effects",
+    "Auto-restart on game end"
+  ],
+  "publicApiSurface": [
+    "initGame() — shuffles and renders the card board",
+    "startTimer() — begins the 40-second countdown",
+    "flip(card) — handles card flip logic and pair matching",
+    "die() — triggers game over sequence",
+    "win() — triggers win sequence"
+  ]
+}
