@@ -1,0 +1,48 @@
+---
+title: "Controls"
+description: "How to interact with Memorama - Forsaken Casino on desktop, mobile, and VR."
+---
+
+The game runs in a WebXR-capable A-Frame scene. All interaction is gaze-based — there is no traditional click mechanic.
+
+<Note>
+  You do not need to click on a card to flip it. Moving the red cursor over a card triggers the `mouseenter` event, which flips the card automatically.
+</Note>
+
+## The red cursor
+
+A red cursor is always visible at the center of your screen. It is an A-Frame cursor attached to the camera with a `raycaster` that targets all `.clickable` elements (the cards). Wherever you look, the cursor follows. Hover it over a face-down card to flip it.
+
+## Camera starting position
+
+The camera rig starts at position `0 1.6 1.2` with a downward rotation of `-25°` on the X-axis. This angles your view directly toward the card table — no manual adjustment is needed before you start playing.
+
+## Controls by platform
+
+<Tabs>
+  <Tab title="Desktop">
+    | Action | Control |
+    |---|---|
+    | Look around | Mouse drag or trackpad drag (`look-controls`) |
+    | Move through the scene | **W** / **A** / **S** / **D** keys (`wasd-controls`, acceleration: 10) |
+    | Flip a card | Move the red cursor over a face-down card (hover only — no click) |
+
+    On desktop, `look-controls` captures pointer input and rotates the camera. Use WASD to reposition yourself if needed, though the default camera position already faces the table.
+  </Tab>
+  <Tab title="Mobile">
+    A-Frame's `look-controls` supports touch-based look controls in mobile browsers. Drag your finger across the screen to rotate your view.
+
+    Moving through the scene with WASD is not available on mobile. To flip a card, rotate your view so the red cursor lands on a face-down card.
+
+    <Note>
+      Performance and experience on mobile may vary depending on the device and browser. A desktop browser or VR headset is recommended for the best experience.
+    </Note>
+  </Tab>
+  <Tab title="VR headset">
+    Memorama uses A-Frame 1.4.0, which supports WebXR natively. Open the game in a WebXR-compatible browser on your headset and enter VR mode.
+
+    Interaction is gaze-based: look at a face-down card to flip it. The red cursor follows your gaze and triggers the `mouseenter` event when it lands on a `.clickable` card.
+
+    No controller input is required.
+  </Tab>
+</Tabs>

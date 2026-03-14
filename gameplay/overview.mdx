@@ -1,0 +1,105 @@
+---
+title: "Gameplay overview"
+description: "Learn the rules, objectives, and mechanics of Forsaken Casino."
+---
+
+## The premise
+
+You are trapped in a cursed casino. The only way out is to prove your memory before time runs out. Find all matching card pairs and you escape with your soul. Fail — and you lose it.
+
+The atmosphere reinforces the stakes: a flickering red point light, exponential fog that closes in around you, a looping horror soundtrack, and a countdown timer labeled **VIDA** (Spanish for "life") that ticks down relentlessly the moment you touch the first card.
+
+## The board
+
+The game places **8 cards** on the round casino table in a **4×2 grid**. The cards are shuffled randomly at the start of every round.
+
+There are **4 unique image pairs**:
+
+| Pair | Image file |
+|---|---|
+| 1 | `img/img1.jpg` |
+| 2 | `img/img2.jpg` |
+| 3 | `img/img3.jpg` |
+| 4 | `img/img4.jpg` |
+
+All cards start face-down, showing the card back (`img/atras.jpeg`). The shuffle is performed with `Array.sort(() => Math.random() - 0.5)` each time the game initializes, so no two rounds have the same layout.
+
+## The VIDA timer
+
+You have **40 seconds** to find all 4 pairs.
+
+<Note>
+  The timer does **not** start when the page loads. It starts on your **first card hover**. Until you hover over a card, the counter stays at `VIDA: 40s` and no music plays. Use this moment to study the board before committing.
+</Note>
+
+The timer counts down in 1-second intervals. The current value is displayed in-world as `VIDA: Xs`, attached to the camera so it is always in view.
+
+## How to play
+
+<Steps>
+  <Step title="Hover over a card to flip it">
+    Move your cursor over any face-down card. A card-flip sound plays (`cartas.mp3`), the card rotates 180° around its Y-axis over 250ms, and the image is revealed at the halfway point of the animation (125ms in).
+
+    If this is your first card interaction, the background music (`fondo.mp3`) starts and the 40-second countdown begins.
+  </Step>
+
+  <Step title="Hover over a second card">
+    After flipping the first card, hover over a second face-down card. The same flip animation plays.
+
+    Once two cards are face-up, the board locks — you cannot flip additional cards until the outcome of the current pair is resolved.
+  </Step>
+
+  <Step title="Match or mismatch">
+    The game compares the `data-id` of both flipped cards:
+
+    - **Match:** After 600ms, both cards shrink to scale `0 0 0` over 300ms and are removed from play. The pair counter increments.
+    - **Mismatch:** After 800ms, both cards rotate back to `0 0 0` (face-down) over 250ms, and their `src` is restored to the card back at the 125ms midpoint. The board unlocks and you can flip again.
+  </Step>
+
+  <Step title="Repeat until all pairs are found or time runs out">
+    Continue flipping pairs. You win by finding all 4 pairs. You lose if the timer reaches 0.
+  </Step>
+</Steps>
+
+## Win condition
+
+When you find the **4th pair** (`pairsFound === 4`), the game:
+
+1. Stops the timer.
+2. Displays the message **SALISTE CON VIDA** ("You escaped with your life") in large red text in the 3D scene.
+3. Automatically reloads the page after **4 seconds**, starting a new round.
+
+<CardGroup cols={2}>
+  <Card title="Message" icon="check">
+    SALISTE CON VIDA
+  </Card>
+  <Card title="Auto-restart" icon="arrows-rotate">
+    Page reloads after 4 seconds
+  </Card>
+</CardGroup>
+
+## Lose condition
+
+When the timer reaches **0**, the game:
+
+1. Stops the timer.
+2. Displays the message **PERDISTE TU ALMA** ("You lost your soul") in large red text.
+3. Fades a dark red overlay (`#deathOverlay`) from transparent to fully opaque over 1 second, covering the entire view.
+4. Automatically reloads the page after **3 seconds**.
+
+<CardGroup cols={2}>
+  <Card title="Message" icon="skull">
+    PERDISTE TU ALMA
+  </Card>
+  <Card title="Auto-restart" icon="arrows-rotate">
+    Page reloads after 3 seconds
+  </Card>
+</CardGroup>
+
+## Board lock
+
+During the resolution window (while the game is deciding match or mismatch), a `lockBoard` flag is set to `true`. Hovering over cards while the board is locked has no effect. The lock releases automatically once the outcome animation completes.
+
+<Tip>
+  Memorize card positions as they are revealed during mismatches. Cards flip back face-down but their positions do not change — a card you saw earlier will still be there.
+</Tip>

@@ -1,0 +1,65 @@
+---
+title: "Introduction"
+description: "A browser-based 3D VR memory card game set in a horror-themed casino, built with A-Frame WebVR."
+---
+
+# Memorama — Forsaken Casino
+
+Welcome to **Forsaken Casino**, a dark and immersive twist on the classic Memorama (memory card) game. Step into a cursed 3D casino where flickering red lights, creeping fog, and haunting audio set the stage as you race against time to match card pairs and escape with your soul.
+
+<CardGroup cols={2}>
+  <Card title="Quick Start" icon="rocket" href="/quickstart">
+    Get the game running in your browser in minutes
+  </Card>
+  <Card title="Gameplay Overview" icon="gamepad" href="/gameplay/overview">
+    Learn the rules, controls, and how to win
+  </Card>
+  <Card title="Game Logic" icon="code" href="/reference/game-logic">
+    Explore the JavaScript functions powering the game
+  </Card>
+  <Card title="Architecture" icon="sitemap" href="/reference/architecture">
+    Understand the A-Frame scene and component structure
+  </Card>
+</CardGroup>
+
+## What is Memorama?
+
+Memorama is the Spanish name for the classic concentration / memory card game. Players flip cards face-up two at a time, trying to find matching pairs. All unmatched cards are flipped back face-down after a short delay. The goal is to find all pairs before time runs out.
+
+**Forsaken Casino** wraps this familiar mechanic in a fully 3D WebVR environment rendered via [A-Frame](https://aframe.io), playable directly in any modern browser — no installation required.
+
+## Key features
+
+<CardGroup cols={2}>
+  <Card title="3D VR environment" icon="vr-cardboard">
+    Full A-Frame scene with a casino table, atmospheric lighting, fog, and textured walls and floor
+  </Card>
+  <Card title="Horror atmosphere" icon="skull">
+    Flickering red point light, exponential fog, dark color palette, and background music
+  </Card>
+  <Card title="40-second countdown" icon="clock">
+    A live timer displayed in-world adds pressure — run out of time and you lose your soul
+  </Card>
+  <Card title="Card flip animations" icon="repeat">
+    Smooth 250ms rotation animations reveal card faces; mismatches flip back automatically
+  </Card>
+  <Card title="Sound effects" icon="volume-high">
+    A card-flip sound plays on every selection; looping background music starts with the first move
+  </Card>
+  <Card title="Auto-restart" icon="arrows-rotate">
+    The game automatically reloads after a win or loss, ready for another round
+  </Card>
+</CardGroup>
+
+## Technology
+
+| Technology | Purpose |
+|---|---|
+| [A-Frame 1.4.0](https://aframe.io) | 3D / WebVR scene rendering |
+| HTML5 | Single-file game host |
+| Vanilla JavaScript | Game logic, timer, card state |
+| Web Audio API | Sound effect and background music playback |
+
+<Note>
+  Forsaken Casino is a single HTML file with no build step or package manager required. Open `index.html` in a modern browser and play immediately.
+</Note>

@@ -1,0 +1,191 @@
+---
+title: "Architecture"
+description: "Technical overview of the Forsaken Casino single-file architecture, A-Frame scene structure, and JavaScript state model."
+---
+
+## Single-file architecture
+
+Forsaken Casino lives entirely in one file: `index.html`. There is no build step, no package manager, and no bundler. The file contains:
+
+- All HTML markup and the A-Frame scene declaration
+- All JavaScript game logic in an inline `<script>` block
+- Asset references pointing to local files in the same directory
+
+The only external dependency is A-Frame, loaded from CDN:
+
+```html index.html
+<script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+```
+
+Opening `index.html` in any modern browser is sufficient to run the game.
+
+## A-Frame scene structure
+
+The top-level `<a-scene>` applies exponential fog to create the dark, claustrophobic atmosphere:
+
+```html index.html
+<a-scene fog="type: exponential; color: #0a0000; density: 0.15">
+```
+
+| Attribute | Value | Effect |
+|---|---|---|
+| `type` | `exponential` | Fog density increases non-linearly with distance |
+| `color` | `#0a0000` | Near-black red — matches the horror color palette |
+| `density` | `0.15` | Objects become obscured within a few units |
+
+### Asset preloading
+
+All images and audio are declared inside `<a-assets>` so A-Frame blocks scene rendering until they are fully loaded:
+
+```html index.html
+<a-assets>
+  <img id="img1" src="img/img1.jpg">
+  <img id="img2" src="img/img2.jpg">
+  <img id="img3" src="img/img3.jpg">
+  <img id="img4" src="img/img4.jpg">
+  <img id="back" src="img/atras.jpeg">
+  <img id="carpet" src="piso.jpg">
+  <img id="stone" src="lados.jpg">
+  <audio id="click-sound" src="cartas.mp3"></audio>
+  <audio id="background-music" src="fondo.mp3" preload="auto"></audio>
+</a-assets>
+```
+
+### Camera rig
+
+The camera is nested inside a rig entity to allow position and rotation to be controlled independently:
+
+```html index.html
+<a-entity id="rig" position="0 1.6 1.2">
+  <a-entity id="camera" camera look-controls wasd-controls="acceleration: 10"
+            rotation="-25 0 0">
+    <a-cursor id="cursor" raycaster="objects: .clickable"
+              material="color: #ff0000" scale="0.5 0.5 0.5"></a-cursor>
+    <a-text id="timerText" value="VIDA: 40s" color="red"
+            position="0 0.5 -1" scale="0.4 0.4 0.4" align="center"></a-text>
+    <a-plane id="deathOverlay" position="0 0 -0.05" width="2" height="2"
+             color="#300" material="opacity: 0; transparent: true"></a-plane>
+  </a-entity>
+</a-entity>
+```
+
+| Entity | Purpose |
+|---|---|
+| `#rig` | Positions the player at height 1.6, slightly in front of the table |
+| `#camera` | Applies look-controls and WASD movement; tilted -25° downward to face the table |
+| `#cursor` | Red raycaster cursor; only targets elements with class `clickable` |
+| `#timerText` | HUD timer, always centered in view |
+| `#deathOverlay` | Full-view red plane, initially transparent; animates to opaque on death |
+
+### Lighting
+
+The scene uses two lights:
+
+```html index.html
+<a-light type="ambient" color="#444"></a-light>
+<a-light id="flicker" type="point" intensity="1" position="0 3 0" color="#f00"
+         animation="property: intensity; from: 0.2; to: 1.2; dur: 150; loop: true; dir: alternate">
+</a-light>
+```
+
+| Light | Type | Color | Detail |
+|---|---|---|---|
+| Ambient | Ambient | `#444` (dark grey) | Flat base illumination across the entire scene |
+| Flicker | Point | `#f00` (red) | Positioned overhead; intensity oscillates between 0.2 and 1.2 every 150ms |
+
+### Environment geometry
+
+```html index.html
+<a-sky color="#000"></a-sky>
+<a-plane src="#carpet" rotation="-90 0 0" width="30" height="30" color="#222"></a-plane>
+<a-box src="#stone" position="0 4 -6" width="20" height="10" depth="0.5" color="#333"></a-box>
+```
+
+| Element | Description |
+|---|---|
+| `<a-sky>` | Solid black sky sphere |
+| `<a-plane>` | 30×30 unit floor textured with `piso.jpg` |
+| `<a-box>` | 20×10 unit back wall textured with `lados.jpg` |
+
+### Decorative props
+
+Two ambient props add visual depth without any gameplay function:
+
+```html index.html
+<a-box color="#111" position="-2 0.3 -2" rotation="0 30 0"
+       width="0.6" height="0.6" depth="0.6"></a-box>
+<a-cylinder color="#050505" position="2 0.5 -2.5"
+            radius="0.3" height="1" rotation="0 0 15"></a-cylinder>
+```
+
+### Casino table
+
+The round table where cards are placed is built from three stacked cylinders:
+
+```html index.html
+<a-entity position="0 0 0">
+  <a-cylinder color="#111" position="0 0.4 0" radius="0.05" height="0.8"></a-cylinder>
+  <a-cylinder color="#1a0f00" position="0 0.8 0" radius="1" height="0.08"></a-cylinder>
+  <a-cylinder color="#002200" position="0 0.81 0" radius="0.95" height="0.04"></a-cylinder>
+</a-entity>
+```
+
+| Cylinder | Role |
+|---|---|
+| `radius="0.05" height="0.8"` | Thin pedestal leg |
+| `radius="1" height="0.08"` | Dark brown tabletop base |
+| `radius="0.95" height="0.04"` | Dark green felt surface |
+
+### Card board
+
+The `#board` entity is the parent container for all dynamically created cards. Its transform places cards flat on the table surface:
+
+```html index.html
+<a-entity id="board" position="-0.3 0.85 0.2" rotation="-90 0 0" scale="0.5 0.5 0.5">
+</a-entity>
+```
+
+`rotation="-90 0 0"` rotates the entity so that cards placed at Z=0 in local space lie flat on the table. `scale="0.5 0.5 0.5"` shrinks the layout to fit within the table surface.
+
+### Status text
+
+```html index.html
+<a-text id="statusText" value="" color="red"
+        position="0 2 -3" scale="2 2 2" align="center"></a-text>
+```
+
+Displays win/lose messages in the 3D world. Starts empty; set by `win()` or `die()`.
+
+## JavaScript state variables
+
+| Variable | Type | Initial value | Purpose |
+|---|---|---|---|
+| `timeLeft` | `number` | `40` | Seconds remaining; decremented every 1000ms |
+| `timerInterval` | `number \| undefined` | `undefined` | Return value of `setInterval`; cleared on win or die |
+| `gameActive` | `boolean` | `false` | Guards `startTimer()` so the interval is only created once |
+| `pairsFound` | `number` | `0` | Count of matched pairs; win triggers when this reaches 4 |
+| `lockBoard` | `boolean` | `false` | Blocks card interaction while two cards are being evaluated |
+| `flippedCards` | `array` | `[]` | Accumulates the one or two currently face-up cards |
+| `cardData` | `array` | `['img1','img1','img2','img2','img3','img3','img4','img4']` | Source of truth for card identities before shuffle |
+
+## Game lifecycle
+
+```
+Page load
+  └─ initGame()          — shuffles cardData, creates 8 <a-box> cards, attaches listeners
+       │
+       └─ [Player hovers a card]
+            └─ startTimer()     — sets gameActive=true, starts music, begins countdown
+                 │
+                 └─ flip(card)  — animates card, evaluates pairs
+                      ├─ Match found
+                      │    └─ win()  ← pairsFound === 4
+                      │         └─ location.reload() after 4s
+                      └─ timeLeft reaches 0
+                           └─ die()
+                                └─ location.reload() after 3s
+```
+
+<Note>
+  `location.reload()` is the only way the game ends. Both `win()` and `die()` call it after a short delay, so every round starts with a clean page state.
+</Note>

@@ -1,0 +1,59 @@
+---
+title: "Rules"
+description: "Complete rules for Memorama - Forsaken Casino: objective, turn structure, win and lose conditions."
+---
+
+## Objective
+
+Find all **4 matching pairs** among the 8 cards on the table before the 40-second **VIDA** timer reaches zero. Match every pair and you escape. Run out of time and you lose your soul.
+
+## Card layout
+
+The board contains 8 cards arranged in a **4×2 grid** (4 columns, 2 rows). Cards are shuffled randomly at the start of every round using `[...cardData].sort(() => Math.random() - 0.5)`, so the layout changes each game. There are exactly 4 unique image pairs: `img1`, `img2`, `img3`, `img4`.
+
+## Turn structure
+
+1. Hover the red cursor over a face-down card — it flips face-up.
+2. Hover the red cursor over a second face-down card — it flips face-up.
+3. The game evaluates the pair:
+   - **Match** — both cards disappear from the board after 600ms.
+   - **No match** — both cards flip back face-down after 800ms, and you try again.
+
+## Win and lose conditions
+
+| Outcome | Trigger | Message displayed | What happens next |
+|---|---|---|---|
+| **Win** | All 4 pairs found (`pairsFound === 4`) | SALISTE CON VIDA | Page reloads automatically after 4 seconds |
+| **Lose** | Timer reaches 0 | PERDISTE TU ALMA | Red overlay fades in, page reloads after 3 seconds |
+
+## Frequently asked questions
+
+<AccordionGroup>
+  <Accordion title="What happens when two cards are face-up and being evaluated?">
+    While two cards are being compared, the board is locked (`lockBoard = true`). Hovering over any other card has no effect until the outcome animation completes and the lock is released. This prevents accidental or deliberate multi-flips.
+  </Accordion>
+
+  <Accordion title="Can I hover over a card that has already been matched?">
+    No. Matched cards are removed from the board entirely — they shrink to scale `0 0 0` and are no longer in play.
+  </Accordion>
+
+  <Accordion title="Can I hover over a card that is already face-up?">
+    Hovering over a card whose `dataset.flipped` is `"true"` does nothing. Only face-down cards respond to the cursor.
+  </Accordion>
+
+  <Accordion title="When does the timer start?">
+    The 40-second timer starts on your **first card hover** — not when the page loads. You can study the board before you commit to flipping a card.
+  </Accordion>
+
+  <Accordion title="What happens when the timer hits zero?">
+    The `die()` function is called. The message **PERDISTE TU ALMA** appears, a dark red overlay fades in over 1 second to cover your view, and the page reloads automatically after 3 seconds.
+  </Accordion>
+
+  <Accordion title="Does the game restart automatically?">
+    Yes. Whether you win or lose, the game calls `location.reload()` to restart. You do not need to refresh the page manually.
+  </Accordion>
+
+  <Accordion title="Are cards reshuffled each round?">
+    Yes. Every time the page loads, the card data array is shuffled with `[...cardData].sort(() => Math.random() - 0.5)`, so the positions of the pairs change each round.
+  </Accordion>
+</AccordionGroup>

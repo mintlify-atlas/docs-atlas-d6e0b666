@@ -1,0 +1,104 @@
+---
+title: "Assets"
+description: "Reference for all image and audio assets used in Forsaken Casino, including how they are loaded and how to replace them."
+---
+
+## Asset list
+
+| Asset ID | File | Type | Usage |
+|---|---|---|---|
+| `img1` | `img/img1.jpg` | Image | Card face texture — pair 1 |
+| `img2` | `img/img2.jpg` | Image | Card face texture — pair 2 |
+| `img3` | `img/img3.jpg` | Image | Card face texture — pair 3 |
+| `img4` | `img/img4.jpg` | Image | Card face texture — pair 4 |
+| `back` | `img/atras.jpeg` | Image | Card back texture — shown on all face-down cards |
+| `carpet` | `piso.jpg` | Image | Floor plane texture (30×30 world units) |
+| `stone` | `lados.jpg` | Image | Back wall texture (20×10 world units) |
+| `click-sound` | `cartas.mp3` | Audio | Card flip sound — plays on every card hover |
+| `background-music` | `fondo.mp3` | Audio | Looping background music — starts on first card hover |
+
+## How assets are preloaded
+
+All assets are declared inside the `<a-assets>` block:
+
+```html index.html
+<a-assets>
+  <img id="img1" src="img/img1.jpg">
+  <img id="img2" src="img/img2.jpg">
+  <img id="img3" src="img/img3.jpg">
+  <img id="img4" src="img/img4.jpg">
+  <img id="back" src="img/atras.jpeg">
+  <img id="carpet" src="piso.jpg">
+  <img id="stone" src="lados.jpg">
+  <audio id="click-sound" src="cartas.mp3"></audio>
+  <audio id="background-music" src="fondo.mp3" preload="auto"></audio>
+</a-assets>
+```
+
+A-Frame's asset management system blocks scene rendering until all assets in `<a-assets>` have finished loading. This prevents cards from appearing with missing textures or the background music from failing to play on first interaction.
+
+<Note>
+  The `background-music` audio element uses `preload="auto"` to hint to the browser that the file should be fully buffered before it is needed, reducing the chance of a playback delay when the first card is hovered.
+</Note>
+
+## Background music playback
+
+Background music is attached to a dedicated entity using A-Frame's `sound` component:
+
+```html index.html
+<a-entity id="bgMusic"
+  sound="src: #background-music; loop: true; volume: 0.3">
+</a-entity>
+```
+
+| Attribute | Value | Effect |
+|---|---|---|
+| `src` | `#background-music` | References the preloaded audio element by ID |
+| `loop` | `true` | Restarts the track automatically when it ends |
+| `volume` | `0.3` | Plays at 30% of full volume |
+
+The sound does not start automatically. It is triggered by `startTimer()` on the first card hover:
+
+```javascript index.html
+document.querySelector('#bgMusic').components.sound.playSound();
+```
+
+## Click sound playback
+
+The card flip sound is played differently from the background music. Instead of using A-Frame's sound component, the game creates a new `Audio` instance directly from the Web Audio API each time a card is hovered:
+
+```javascript index.html
+new Audio(document.querySelector('#click-sound').src).play();
+```
+
+<Note>
+  Creating a new `Audio` instance per flip bypasses A-Frame's sound system and allows the same sound to overlap itself. If you used a single A-Frame sound component for the flip sound, a fast sequence of card hovers could cut off the previous sound before it finished playing.
+</Note>
+
+## Replacing card images
+
+To customize the four card face images, replace the files in the `img/` directory:
+
+1. Replace `img/img1.jpg`, `img/img2.jpg`, `img/img3.jpg`, and `img/img4.jpg` with your own images.
+2. Keep the same filenames and the same `img/` directory path.
+3. The game logic references cards by their asset ID (`img1`–`img4`), not by file content, so no code changes are required.
+
+To replace the card back image, replace `img/atras.jpeg`. You can also change the file extension by updating both the file and the `src` attribute in `<a-assets>`.
+
+<Note>
+  There are always exactly 4 unique pairs in the game — one per image. If you want to add more pairs, you need to add new image assets, extend the `cardData` array, and adjust the card grid layout in `initGame()`.
+</Note>
+
+## Replacing audio
+
+To replace the background music, swap out `fondo.mp3` with your own audio file. To replace the card flip sound, swap out `cartas.mp3`.
+
+If you change the filename or format, update the `src` attribute on the corresponding `<audio>` element inside `<a-assets>`:
+
+```html index.html
+<!-- Change the src value to match your new file -->
+<audio id="background-music" src="your-music.mp3" preload="auto"></audio>
+<audio id="click-sound" src="your-click.mp3"></audio>
+```
+
+No other code changes are needed — the rest of the game references these assets by their `id` attribute, not by filename.

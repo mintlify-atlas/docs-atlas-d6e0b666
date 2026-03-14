@@ -1,0 +1,229 @@
+---
+title: "Game logic"
+description: "Detailed reference for every JavaScript function in Forsaken Casino: initGame, startTimer, flip, die, and win."
+---
+
+All game logic lives in a single inline `<script>` block at the bottom of `index.html`. There are five functions, each with a distinct responsibility.
+
+## `initGame()`
+
+Called once on page load. Builds the card board from scratch.
+
+```javascript index.html
+function initGame() {
+    board.innerHTML = '';
+    const shuffled = [...cardData].sort(() => Math.random() - 0.5);
+    shuffled.forEach((imgId, index) => {
+        const x = (index % 4) * 0.4;
+        const y = Math.floor(index / 4) * -0.6;
+        const card = document.createElement('a-box');
+
+        card.setAttribute('position', `${x} ${y} 0`);
+        card.setAttribute('width', '0.35');
+        card.setAttribute('height', '0.5');
+        card.setAttribute('depth', '0.01');
+        card.setAttribute('src', '#back');
+        card.setAttribute('class', 'clickable');
+        card.dataset.id = imgId;
+        card.dataset.flipped = "false";
+
+        card.addEventListener('mouseenter', function() {
+            if (lockBoard || this.dataset.flipped === "true" || timeLeft <= 0) return;
+            startTimer();
+            new Audio(document.querySelector('#click-sound').src).play();
+            flip(this);
+        });
+        board.appendChild(card);
+    });
+}
+```
+
+**What it does:**
+
+1. Clears any existing cards from `board.innerHTML`.
+2. Creates a shallow copy of `cardData` and shuffles it with `sort(() => Math.random() - 0.5)`.
+3. Iterates over the 8 shuffled entries and creates one `<a-box>` per card.
+4. Positions each card on a 4×2 grid using:
+
+| Axis | Formula | Effect |
+|---|---|---|
+| `x` | `(index % 4) * 0.4` | 4 columns, 0.4 units apart |
+| `y` | `Math.floor(index / 4) * -0.6` | 2 rows, 0.6 units apart, growing downward |
+| `z` | `0` | Flat in the board plane |
+
+5. Sets each card's dimensions to `width: 0.35`, `height: 0.5`, `depth: 0.01`.
+6. Assigns `src="#back"` so all cards start face-down.
+7. Stores the image identity in `dataset.id` and marks `dataset.flipped = "false"`.
+8. Attaches a `mouseenter` listener that guards against locked board, already-flipped cards, and expired timer before calling `startTimer()`, playing the click sound, and calling `flip(card)`.
+
+## `startTimer()`
+
+Starts the countdown and background music. Called by the `mouseenter` listener on the first card hover.
+
+```javascript index.html
+function startTimer() {
+    if(!gameActive) {
+        gameActive = true;
+        document.querySelector('#bgMusic').components.sound.playSound();
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            timerText.setAttribute('value', `VIDA: ${timeLeft}s`);
+            if(timeLeft <= 0) die();
+        }, 1000);
+    }
+}
+```
+
+**What it does:**
+
+- The `if(!gameActive)` guard ensures the interval is created exactly once, even if multiple cards are hovered in quick succession.
+- Sets `gameActive = true` to block re-entry.
+- Calls `playSound()` on the A-Frame sound component attached to `#bgMusic` to start the looping background track.
+- Creates a `setInterval` that fires every 1000ms. Each tick decrements `timeLeft`, updates the HUD text, and calls `die()` when `timeLeft` drops to 0 or below.
+
+<Note>
+  The timer only starts on the first card hover, not on page load. You can study the board before committing to a flip.
+</Note>
+
+## `flip(card)`
+
+Flips a single card face-up and evaluates the pair when two cards are face-up.
+
+```javascript index.html
+function flip(card) {
+    card.dataset.flipped = "true";
+    flippedCards.push(card);
+
+    card.setAttribute('animation', 'property: rotation; to: 0 180 0; dur: 250');
+    setTimeout(() => card.setAttribute('src', '#' + card.dataset.id), 125);
+
+    if (flippedCards.length === 2) {
+        lockBoard = true;
+        const [card1, card2] = flippedCards;
+
+        if (card1.dataset.id === card2.dataset.id) {
+            setTimeout(() => {
+                card1.setAttribute('animation', 'property: scale; to: 0 0 0; dur: 300');
+                card2.setAttribute('animation', 'property: scale; to: 0 0 0; dur: 300');
+                pairsFound++;
+                flippedCards = [];
+                lockBoard = false;
+                if (pairsFound === 4) win();
+            }, 600);
+        } else {
+            setTimeout(() => {
+                card1.setAttribute('animation', 'property: rotation; to: 0 0 0; dur: 250');
+                card2.setAttribute('animation', 'property: rotation; to: 0 0 0; dur: 250');
+                setTimeout(() => {
+                    card1.setAttribute('src', '#back');
+                    card2.setAttribute('src', '#back');
+                    card1.dataset.flipped = "false";
+                    card2.dataset.flipped = "false";
+                    flippedCards = [];
+                    lockBoard = false;
+                }, 125);
+            }, 800);
+        }
+    }
+}
+```
+
+### Single-card flip sequence
+
+| Time (ms) | Action |
+|---|---|
+| 0 | `dataset.flipped = "true"`, card pushed to `flippedCards` |
+| 0 | A-Frame animation starts: rotation `0 0 0` → `0 180 0` over 250ms |
+| 125 | `src` swapped from `#back` to the card's face image (at the animation midpoint) |
+| 250 | Rotation animation completes; card is fully face-up |
+
+### Match resolution sequence
+
+Triggered when `card1.dataset.id === card2.dataset.id`:
+
+| Time (ms) | Action |
+|---|---|
+| 0 | `lockBoard = true` |
+| 600 | Scale animations start: both cards shrink from `1 1 1` to `0 0 0` over 300ms |
+| 600 | `pairsFound++`, `flippedCards = []`, `lockBoard = false` |
+| 600 | If `pairsFound === 4`, calls `win()` |
+| 900 | Both cards have fully disappeared |
+
+### Mismatch resolution sequence
+
+Triggered when `card1.dataset.id !== card2.dataset.id`:
+
+| Time (ms) | Action |
+|---|---|
+| 0 | `lockBoard = true` |
+| 800 | Rotation animations start: both cards rotate from `0 180 0` back to `0 0 0` over 250ms |
+| 925 | `src` reset to `#back`; `dataset.flipped = "false"` for both cards |
+| 925 | `flippedCards = []`, `lockBoard = false` |
+| 1050 | Rotation animations complete; both cards fully face-down |
+
+<Note>
+  The `src` swap at the animation midpoint (125ms into a 250ms rotation) creates the illusion that the image changes as the card passes through 90°, matching a physical card flip.
+</Note>
+
+## `die()`
+
+Handles the lose condition when `timeLeft` reaches 0.
+
+```javascript index.html
+function die() {
+    clearInterval(timerInterval);
+    statusText.setAttribute('value', 'PERDISTE TU ALMA');
+    deathOverlay.setAttribute('animation',
+        'property: material.opacity; to: 1; dur: 1000');
+    setTimeout(() => location.reload(), 3000);
+}
+```
+
+**Sequence:**
+
+| Time (ms) | Action |
+|---|---|
+| 0 | `clearInterval(timerInterval)` — stops the countdown |
+| 0 | `statusText` set to **PERDISTE TU ALMA** |
+| 0 | `deathOverlay` opacity animation begins (transparent → opaque, 1000ms) |
+| 1000 | Overlay is fully opaque; view is covered |
+| 3000 | `location.reload()` restarts the game |
+
+## `win()`
+
+Handles the win condition when all 4 pairs are found.
+
+```javascript index.html
+function win() {
+    clearInterval(timerInterval);
+    statusText.setAttribute('value', 'SALISTE CON VIDA');
+    setTimeout(() => location.reload(), 4000);
+}
+```
+
+**Sequence:**
+
+| Time (ms) | Action |
+|---|---|
+| 0 | `clearInterval(timerInterval)` — stops the countdown |
+| 0 | `statusText` set to **SALISTE CON VIDA** |
+| 4000 | `location.reload()` restarts the game |
+
+<Note>
+  `win()` does not animate an overlay. The win delay (4 seconds) is longer than the lose delay (3 seconds), giving the player a moment to see their success message before the page reloads.
+</Note>
+
+## Function call map
+
+```
+Page load
+  └─ initGame()
+       └─ [mouseenter on card]
+            ├─ startTimer()   (first hover only)
+            └─ flip(card)
+                 ├─ [match]  → win()  → location.reload()
+                 └─ [no match, board resets]
+
+setInterval tick (every 1s)
+  └─ [timeLeft <= 0] → die() → location.reload()
+```
